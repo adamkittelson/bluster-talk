@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Bluster: Adventures with dead simple cluster management</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Hakim El Hattab">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<!-- For Fonts -->
+		<link rel="stylesheet" href="lib/css/font-awesome.css">
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/mmcc.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+		<script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1 class="text pink">Bluster</h3>
+					<p>Adventures with <span class="text pink">dead simple</span> cluster management</p>
+					<p>
+							<small><a href="http://twitter.com/matt_mcclure"><i class="fa fa-twitter"></i>  @matt_mcclure</a></small>
+					</p>
+				</section>
+
+				<section>
+					<section>
+						<h2>Before we get <span class="text green">started</span></h2>
+						<p>Just to get a few things straight</p>
+					</section>
+
+					<section>
+						<h2>Bluster solves a <span class="text blue">current problem</span></h2>
+						<p>It's made our development life a <span class="text blue">lot</span> easier</p>
+					</section>
+
+					<section>
+						<h2><span class="text indigo">So...</span>where is it?</h2>
+						<p>We're holding out for bigger and better things</p>
+						<p><small>(<span class="text indigo">Tectonic</span>)</small></p>
+						<aside class="notes">
+							Let's go ahead and start talking about how we started using CoreOS and what led us to building
+							Bluster in the first place
+						</aside>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>CoreOS is <span class="text pink">great</span> at onboarding</h2>
+						<img src="/img/onboarding.png" class="no-border">
+					</section>
+
+					<section>
+						<h2>Initial testing was all <span class="text green">CloudFormation</span></h2>
+						<p>Incredibly easy to spin up / tear down a quick test cluster.</p>
+					</section>
+
+					<section>
+						<h2><span class="text orange">But</span>...</h2>
+						<ul>
+							<li class="fragment">Autoscaling groups left a lot to be desired</li>
+							<li class="fragment">Too much (AWS) Magic</li>
+							<li class="fragment">We were considering other cloud providers (<i class="fa fa-google"></i>)</li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>What we <span class="text indigo">wanted</span> in a solution</h2>
+					</section>
+
+					<section>
+						<h2>Cross <span class="text blue">Platform</span></h2>
+						<p>Didn't need to do it all up front, but we wanted the option</p>
+					</section>
+
+					<section>
+						<h2>Simple <span class="text pink">configuration</span></h2>
+						<p>Needing to configuration per provider was fine</p>
+						<p><small>But it all needed to be human readable</small></p>
+					</section>
+
+					<section>
+						<h2>Simple to <span class="text orange">add instances</span></h2>
+						<p>We didn't require anything crazy in terms of auto scaling</p>
+
+						<aside class="notes">
+							We didn't require anything crazy for auto scaling, but we did need to be able to easily
+							manually spin up new instances. When we did bring up those new instances, we wanted to be able to use
+							the same configuration as the other machines and just specify the current CoreOS image.
+						</aside>
+					</section>
+
+					<section>
+						<h2>Simple cluster <span class="text pink">creation</span></h2>
+						<p>Wanted a cluster per environment</p>
+
+						<aside class="notes">
+							Might seem like a CoreOS anti-pattern, but we were the internal stepping stone.
+							<ul>
+								<li>Play nice with SysEng</li>
+								<li>Be able to run in the different VPCs</li>
+								<li>Be able to back out of CoreOS if we needed to</li>
+							</ul>
+						</aside>
+					</section>
+
+					<section>
+						<h2>Simple cluster <span class="text green">switching</span></h2>
+						<p>Prepending <code class="text green">FLEETCTL_TUNNEL</code> gets old fast</p>
+
+						<aside class="notes">
+							Once we had multiple tunnels set up, needed to be able to quickly and easily switch between them.
+						</aside>
+					</section>
+
+					<section>
+						<h2>Ok with <span class="text blue">direct</span> interaction</h2>
+						<p>Didn't mind using Etcd and Fleet directly</p>
+
+						<aside class="notes">
+							Lastly...
+						</aside>
+					</section>
+				</section>
+
+				<section>
+					<h2>What we ended up <span class="text indigo">building</span></h2>
+					<img src="/img/bluster0.png" class="no-border">
+				</section>
+
+				<section>
+					<section>
+						<h2><code>$ bluster <span class="text green">bootstrap</span></code></h2>
+						<img src="/img/bluster-bootstrap.png" class="no-border">
+
+						<aside class="notes">
+							<p>Specifying everything in the command itself was ok for about...never.
+							Almost immediately switched to exclusively using <code>--config</code>.</p>
+							<p>Generated a custom cloud config for us based on the config used.</p>
+						</aside>
+					</section>
+
+					<section>
+						<h2><span class="text orange">JSON</span> configuration</h2>
+    				<pre><code data-trim>{
+  "vpc": "vpc-1234abcd",
+  "securityGroup": "sg-1234abcd",
+  "quay": "your-cool-quay-token",
+  "iam": "paperboy-qa",
+  "key": "some-keyfile",
+  "advertised": "private",
+  "current_machines": [
+    "10.96.3.110",
+    "10.96.4.184",
+    "10.96.0.238"
+  ],
+  "complimentary_services": [
+    "datadog.service",
+    "redis.service",
+    "smoke-qa.service",
+    "sumologic-qa.service",
+    "paperboy-qa-presence@.service"
+  ],
+  "primary_services": {
+    "paperboy-qa@.service": 3
+  },
+  "discovery": "https://discovery.etcd.io/80af233780f9a5c66b772ccdb4772f7b"
+}</code></pre>
+
+						<aside class="notes">
+							<ul>
+								<li>If "discovery" isn't included, we go get a new one and add it to the file</li>
+								<li>"current_machines" needs to be added after the cluster is created (what we use for tunnels later)</li>
+								<li>"complimentary_services" and "primary_services" is still a little half baked</li>
+							</ul>
+						</aside>
+					</section>
+
+					<section>
+						<h2>Simple <span class="text pink">Usage</span></h2>
+						<script type="text/javascript" src="https://asciinema.org/a/19553.js" id="asciicast-19553" async></script>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h3><code>$ bluster <span class="text green">add-instance</span></code></h3>
+						<img src="/img/bluster-add-instance.png" class="no-border">
+					</section>
+
+					<section>
+						<h2><span class="text indigo">Usage</span></h2>
+						<pre><code>$ bluster add-instance -c ops/foobar.json -n 1 talk-example ami-d2033bba</code></pre>
+
+						<aside class="notes">
+							In the interest of time, I didn't record the terminal output. I think you can use your imagination on this one.
+						</aside>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2><code>$ bluster <span class="text pink">etcd</span></code></h2>
+						<img src="/img/bluster-etcd.png" class="no-border">
+					</section>
+
+					<section>
+						<h2>Does almost <span class="text orange">nothing</span></h2>
+						<p>Tunnels into the cluster and runs etcd commands.</p>
+
+						<aside class="notes">
+							Seriously. That's it. That's all we needed and it's been *immensely* useful.
+						</aside>
+					</section>
+
+					<section>
+						<h2><span class="text blue">Usage</span> example</h2>
+						<script type="text/javascript" src="https://asciinema.org/a/19555.js" id="asciicast-19555" async></script>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2><code>$ bluster <span class="text pink">fleet</span></code></h2>
+						<img src="/img/bluster-fleet.png" class="no-border">
+						<p><small>TL;DR: Prepends <code class="text pink">FLEETCTL_TUNNEL</code> to commands</small></p>
+					</section>
+
+					<section>
+						<h2>Does even <span class="text indigo">less</span></h2>
+						<p>Literally prepends <code class="text indigo">FLEETCTL_TUNNEL</code> to commands</p>
+						<p><small> ¯\_(ツ)_/¯</small></p>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2><code>$ bluster <span class="text blue">deploy</span></code></h2>
+						<img src="/img/bluster-deploy.png" class="no-border">
+					</section>
+
+					<section>
+						<h2>Relies entirely on <span class="text orange">Fleet</span></h2>
+						<p>Basically stops and starts service files (but waits for previous to start again)</p>
+
+						<aside class="notes">
+							We also rely on etcd for watching deployment and triggering
+							registering / deregistering from load balancers.
+						</aside>
+					</section>
+
+					<section>
+						<h2>Wonderful in <span class="text pink">theory</span></h2>
+						<p>Generally feel more comfortable manually deploying</p>
+
+						<aside class="notes">
+							Talk about small scope of deploys, canary deploys, rollbacks, etc.
+						</aside>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2><code>$ bluster <span class="text green">initialize</span></code></h2>
+						<p>Submits complimentary services, starts them, then deploys primary services</p>
+					</section>
+
+					<section>
+						<h2>Easy to <span class="text indigo">digest</span></h2>
+						<pre><code data-trim>{
+  "complimentary_services": [
+    "datadog.service",
+    "redis.service",
+    "smoke-qa.service",
+    "sumologic-qa.service"
+  ],
+  "primary_services": {
+    "paperboy-qa@.service": 3
+  }
+}</pre></code>
+					</section>
+
+					<section>
+						<h2><span class="text orange">Kinda</span> works</h2>
+						<p>But when it doesn't, it's a bit of a bluster</p>
+						<small>Get it?</small>
+					</section>
+				</section>
+
+				<section>
+					<h2>Bluster's <span class="text pink">Shortcomings</span></h2>
+					<ul>
+						<li class="fragment">Deploys are, for the most part, manual.</li>
+						<li class="fragment">It's a dumb tool. You have to know what you're doing.</li>
+						<li class="fragment">Is that a feature?</li>
+						<li class="fragment">No, it's a shortcoming. Easy to do dumb things (like submit template files).</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>Regret? <span class="text orange">Nope</span>.</h2>
+					<ul>
+						<li class="fragment">Learned a lot</li>
+						<li class="fragment">Debugged a lot</li>
+						<li class="fragment">Because of this, really wanted someone else to build a better solution</li>
+						<li class="fragment">Because of this, really excited about Tectonic</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2><span class="text blue">Open</span> sourcing it?</h2>
+					<p>If you're interested in this, get in touch.</p>
+				</section>
+
+				<section>
+					<h2>Council of <span class="text green">Beards</span></h2>
+					<img src="/img/beards/redbeard.jpg" height="200px" width="auto" class="no-border">
+					<img src="/img/beards/polvi.png" height="200px" width="auto" class="no-border">
+					<img src="/img/beards/waldon.jpeg" height="200px" width="auto" class="no-border">
+				</section>
+
+				<section>
+					<h2><span class="text indigo">Thank</span> you</h2>
+					<p>Questions? Comments? <span class="text indigo">Ping</span> me!</p>
+					<p>
+						<small><a href="mailto:mmcclure@brightcove.com"><i class="fa fa-envelope"></i> mmcclure@brightcove.com</a></small><br/>
+						<small><a href="http://twitter.com/matt_mcclure"><i class="fa fa-twitter"></i>  @matt_mcclure</a></small>
+					</p>
+				</section>
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+		<script src="node_modules/video.js/dist/video-js/video.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: 'linear', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
